@@ -1,4 +1,9 @@
 ARG RUST_VERSION=1.73.0
+ENV CITY_API_ADDR=$CITY_API_ADDR
+ENV CITY_API_PORT=$CITY_API_PORT
+ENV CITY_API_DB_URL=$CITY_API_DB_URL
+ENV CITY_API_DB_USER=$CITY_API_DB_USER
+ENV CITY_API_DB_PWD=$CITY_API_DB_PWD
 
 FROM rust:${RUST_VERSION}-slim-bullseye AS dependency
 WORKDIR /opt/craby_city
@@ -41,4 +46,4 @@ COPY --from=build /bin/server /bin/
 EXPOSE 8080
 
 # What the container should run when it is started.
-CMD ["/bin/server"]
+ENTRYPOINT ["/bin/server"]
