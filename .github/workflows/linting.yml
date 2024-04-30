@@ -34,10 +34,6 @@ jobs:
             toolchain: nightly
             components: clippy
         - name: Run clippy
-          uses: giraffate/clippy-action@v1.0.1
-          with:
-            reporter: github-pr-review
-            github_token: ${{ secrets.GITHUB_TOKEN }}
-            clippy_flags: --workspace --tests --all-features
+          run : cargo clippy --all -- -D warnings
           
 
