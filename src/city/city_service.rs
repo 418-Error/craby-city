@@ -1,6 +1,6 @@
-use std::sync::Arc;
-use sqlx::{PgPool};
 use crate::city::model::City;
+use sqlx::PgPool;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct CityService {
