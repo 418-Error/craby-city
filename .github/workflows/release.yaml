@@ -31,7 +31,7 @@ jobs:
             components: clippy
         - name: Run clippy
           run : cargo clippy --all -- -D warnings
-    push_to_registry:
+    release:
         needs: [fmt, clippy]
         name: Push Docker image to Dockerhub
         runs-on: ubuntu-latest
@@ -53,4 +53,12 @@ jobs:
                 tags: |
                     ${{ secrets.DOCKER_USERNAME }}/craby-city:${{ env.TAG }}
                     ${{ secrets.DOCKER_USERNAME }}/craby-city:latest
-            
+            - name: Scan cve
+              uses: aquasecurity/trivy-action@master
+              with:
+                  image-ref: ${{ secrets.DOCKER_USERNAME }}/craby-city:${{ env.TAG }}
+                  format: table
+                  exit-code: 1
+                  ignore-unfixed: true
+                  vuln-type: 'os,library'
+                  severity: 'CRITICAL,HIGH'
