@@ -1,8 +1,8 @@
 -- Drop the table if it already exists to ensure a clean slate
-DROP TABLE IF EXISTS locations;
+DROP TABLE IF EXISTS cities;
 
 -- Create the table with the given schema
-CREATE TABLE locations (
+CREATE TABLE cities (
     id SERIAL PRIMARY KEY,
     department_code VARCHAR(5),
     insee_code VARCHAR(10),
