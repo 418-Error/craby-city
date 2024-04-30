@@ -1,8 +1,9 @@
 use sqlx::FromRow;
+use serde::Serialize;
 
-#[derive(Debug, FromRow)]
+#[derive(Debug, FromRow, Serialize)]
 pub struct City {
-    pub id: u32,
+    pub id: i64,
     pub department_code: String,
     pub insee_code: String,
     pub zip_code: String,
