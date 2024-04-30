@@ -1,12 +1,6 @@
 name: lint
 
 on:
-    push:
-        branches:
-        - main
-        - develop
-        - ci
-        - feature/*
     pull_request:
         branches:
         - main
@@ -23,7 +17,6 @@ jobs:
             components: rustfmt
         - name: Run rustfmt
           run: cargo fmt --all -- --check
-    
     clippy:
         runs-on: ubuntu-latest
         steps:
@@ -36,4 +29,3 @@ jobs:
         - name: Run clippy
           run : cargo clippy --all -- -D warnings
           
-
