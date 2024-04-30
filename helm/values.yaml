@@ -1,7 +1,17 @@
 postgresql:
-  postgresqlDatabase: craby_city
+  postgresqlDatabase: crabycity
   postgresqlUsername: postgres
 
 cityApiAddr: "localhost"
 cityApiPort: "80"
 cityApiDbUrl: "postgres://postgres:postgres@localhost:5432/craby_city"
+
+image:
+  repository: "milou666/craby-city"
+  tag: "latest"
+
+replicaCount: 1
+
+service:
+  internalPort: 80
+  externalPort: 80

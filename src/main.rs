@@ -6,6 +6,7 @@ use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use dotenv::dotenv;
 use sqlx::postgres::PgPoolOptions;
+use tracing::info;
 use std::env;
 use std::sync::Arc;
 
@@ -17,10 +18,20 @@ use crate::health::health_service::HealthService;
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
-    std::env::set_var("RUST_LOG", "debug");
-    env_logger::init();
+    tracing_subscriber::fmt::init();
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set in .env file");
+    let addr = env::var("CITY_API_DB_ADDR").unwrap_or("127.0.0.1".to_string());
+    let port = env::var("CITY_API_PORT").unwrap_or("2022".to_string());
+    let db_password = env::var("CITY_API_DB_PASSWORD").expect("CITY_API_DB_PASSWORD must be set in .env file");
+    let db_url = env::var("CITY_API_DB_URL").expect("CITY_API_DB_URL must be set in .env file");
+    let db_user = env::var("CITY_API_DB_USER").expect("CITY_API_DB_USER must be set in .env file");
+
+    let database_url = format!(
+        "postgres://{}:{}@{}/craby_city",
+        db_user, db_password, db_url
+    );
+
+    let addr_in = format!("{}:{}", addr, port);
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
@@ -28,7 +39,7 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to create pool");
 
-    println!("Server started at http://localhost:3333");
+    info!("Starting server at: {}", addr_in);
 
     let pool = Arc::new(pool);
 
@@ -44,7 +55,7 @@ async fn main() -> std::io::Result<()> {
             .service(health_controller::live)
             .service(health_controller::ready)
     })
-    .bind("127.0.0.1:3333")?
+    .bind(addr_in)?
     .run()
     .await
 }
