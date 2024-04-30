@@ -8,6 +8,6 @@ CREATE TABLE cities (
     insee_code VARCHAR(10),
     zip_code VARCHAR(10),
     name VARCHAR(50),
-    lat NUMERIC(10, 8),
-    lon NUMERIC(10, 8)
+    lat FLOAT(10),
+    lon FLOAT(10)
 );
