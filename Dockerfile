@@ -1,11 +1,5 @@
-ARG RUST_VERSION=1.73.0
-ENV CITY_API_ADDR=$CITY_API_ADDR
-ENV CITY_API_PORT=$CITY_API_PORT
-ENV CITY_API_DB_URL=$CITY_API_DB_URL
-ENV CITY_API_DB_USER=$CITY_API_DB_USER
-ENV CITY_API_DB_PWD=$CITY_API_DB_PWD
-
-FROM rust:${RUST_VERSION}-slim-bullseye AS dependency
+ARG RUST_VERSION=1.77
+FROM rust:${RUST_VERSION}-buster AS dependency
 WORKDIR /opt/craby_city
 
 RUN mkdir -p src && echo "fn main() {}" >> src/main.rs
@@ -21,12 +15,16 @@ RUN --mount=type=cache,target=/opt/target/ \
     --mount=type=bind,source=Cargo.toml,target=Cargo.toml  \
     --mount=type=bind,source=Cargo.lock,target=Cargo.lock  \
     --mount=type=cache,target=/usr/local/cargo/registry/ \
-    <<EOF /bin/sh -e
-cargo build --locked --release
-cp ./target/release/craby-city /bin/server
-EOF
+    cargo build --release && \
+    cp ./target/release/craby-city /bin/server
 
 FROM debian:bullseye-slim AS final
+
+ENV CITY_API_ADDR=$CITY_API_ADDR
+ENV CITY_API_PORT=$CITY_API_PORT
+ENV CITY_API_DB_URL=$CITY_API_DB_URL
+ENV CITY_API_DB_USER=$CITY_API_DB_USER
+ENV CITY_API_DB_PWD=$CITY_API_DB_PWD
 
 # See https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
 RUN adduser \
