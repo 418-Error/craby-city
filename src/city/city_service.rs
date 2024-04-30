@@ -1,4 +1,4 @@
-use crate::city::model::City;
+use crate::city::model::{City, CreateCity};
 use sqlx::PgPool;
 use std::sync::Arc;
 
@@ -18,5 +18,19 @@ impl CityService {
             .await?;
 
         Ok(cities)
+    }
+
+    pub async fn create(&self, city: CreateCity) -> Result<(), sqlx::Error> {
+        sqlx::query("INSERT INTO public.cities (department_code, insee_code, zip_code, name, lat, lon) VALUES ($1, $2, $3, $4, $5, $6)")
+            .bind(city.department_code)
+            .bind(city.insee_code)
+            .bind(city.zip_code)
+            .bind(city.name)
+            .bind(city.lat)
+            .bind(city.lon)
+            .execute(self.pool.as_ref())
+            .await?;
+
+        Ok(())
     }
 }

@@ -1,7 +1,7 @@
-use std::sync::Arc;
-use actix_web::{get, HttpResponse, Responder, web};
-use serde::Serialize;
 use crate::health::health_service::HealthService;
+use actix_web::{get, web, HttpResponse, Responder};
+use serde::Serialize;
+use std::sync::Arc;
 
 #[derive(Serialize)]
 struct HealthCheckResponse {
@@ -48,9 +48,7 @@ async fn live() -> impl Responder {
 }
 
 #[get("/health/readiness")]
-async fn ready(
-    health_service: web::Data<Arc<HealthService>>
-) -> impl Responder {
+async fn ready(health_service: web::Data<Arc<HealthService>>) -> impl Responder {
     let db_health = match health_service.check().await {
         Ok(_) => Health {
             healthy: true,
@@ -61,7 +59,6 @@ async fn ready(
             message: Some("Database connection failed".to_string()),
         },
     };
-
 
     let response = HealthCheckResponse {
         healthy: db_health.healthy,

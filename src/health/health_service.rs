@@ -1,9 +1,9 @@
-use std::sync::Arc;
 use sqlx::PgPool;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct HealthService {
-    pool: Arc<PgPool>
+    pool: Arc<PgPool>,
 }
 
 impl HealthService {
@@ -12,9 +12,7 @@ impl HealthService {
     }
 
     pub async fn check(&self) -> Result<(), sqlx::Error> {
-        sqlx::query("SELECT 1")
-            .execute(self.pool.as_ref())
-            .await?;
+        sqlx::query("SELECT 1").execute(self.pool.as_ref()).await?;
 
         Ok(())
     }
