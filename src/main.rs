@@ -1,3 +1,6 @@
+mod city;
+mod health;
+
 use crate::city::city_service::CityService;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
@@ -6,7 +9,9 @@ use sqlx::postgres::PgPoolOptions;
 use std::env;
 use std::sync::Arc;
 
-mod city;
+use crate::city::city_controller;
+use crate::health::health_controller;
+use crate::health::health_service::HealthService;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -27,12 +32,17 @@ async fn main() -> std::io::Result<()> {
 
     let pool = Arc::new(pool);
 
-    let city_service = Arc::new(CityService::new(pool));
+    let city_service = Arc::new(CityService::new(pool.clone()));
+    let health_service = Arc::new(HealthService::new(pool.clone()));
 
     HttpServer::new(move || {
         App::new()
             .app_data(Data::new(city_service.clone()))
-            .service(city::city_controller::get_all_cities)
+            .app_data(Data::new(health_service.clone()))
+            .service(city_controller::get_all_cities)
+            .service(city_controller::create_city)
+            .service(health_controller::live)
+            .service(health_controller::ready)
     })
     .bind("127.0.0.1:3333")?
     .run()
