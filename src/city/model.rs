@@ -1,6 +1,5 @@
 use sqlx::FromRow;
 use serde::Serialize;
-use bigdecimal::BigDecimal;
 
 #[derive(Debug, FromRow, Serialize)]
 pub struct City {

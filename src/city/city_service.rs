@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use sqlx::{PgPool, Pool, Postgres};
+use sqlx::{PgPool};
 use crate::city::model::City;
 
 #[derive(Clone)]
@@ -18,19 +18,5 @@ impl CityService {
             .await?;
 
         Ok(cities)
-    }
-
-    pub async fn find_by_id(&self, id: i32) -> City {
-        let city = City {
-            id: 1,
-            name: "Paris".to_string(),
-            zip_code: "75000".to_string(),
-            insee_code: "75056".to_string(),
-            department_code: "75".to_string(),
-            lon: 2.3522,
-            lat: 48.8566,
-        };
-
-        city
     }
 }
