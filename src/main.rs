@@ -1,10 +1,10 @@
+use crate::city::city_service::CityService;
+use actix_web::web::Data;
+use actix_web::{App, HttpServer};
+use dotenv::dotenv;
+use sqlx::postgres::PgPoolOptions;
 use std::env;
 use std::sync::Arc;
-use actix_web::{App, HttpServer};
-use actix_web::web::Data;
-use dotenv::dotenv;
-use sqlx::{postgres::PgPoolOptions};
-use crate::city::city_service::CityService;
 
 mod city;
 
@@ -15,8 +15,7 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
-    let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set in .env file");
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set in .env file");
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
@@ -35,7 +34,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(city_service.clone()))
             .service(city::city_controller::get_all_cities)
     })
-        .bind("127.0.0.1:3333")?
-        .run()
-        .await
+    .bind("127.0.0.1:3333")?
+    .run()
+    .await
 }
