@@ -21,17 +21,17 @@ spec:
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: {{ .Values.service.internalPort | int }}
-      env:
-      - name: CITY_API_ADDR
-        value: {{ .Values.cityApiAddr }}
-      - name: CITY_API_PORT
-        value: {{ .Values.cityApiPort }}
-      - name: CITY_API_DB_URL
-        value: {{ .Values.cityApiDbUrl }}
-      - name: CITY_API_DB_USER
-        value: {{ .Values.postgresql.postgresqlUsername }}
-      - name: CITY_API_DB_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: {{ .Release.Name}}-postgresql
-            key: postgresql-postgres-password
+        env:
+          - name: CITY_API_ADDR
+            value: {{ .Values.cityApiAddr }}
+          - name: CITY_API_PORT
+            value: {{ .Values.cityApiPort | quote }} 
+          - name: CITY_API_DB_URL
+            value: {{ .Values.cityApiDbUrl }}
+          - name: CITY_API_DB_USER
+            value: {{ .Values.postgresUser }}
+          - name: CITY_API_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-postgresql
+                key: postgres-password
