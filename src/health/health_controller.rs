@@ -1,8 +1,8 @@
 use crate::health::health_service::HealthService;
 use actix_web::{get, web, HttpResponse, Responder};
 use serde::Serialize;
-use tracing::info;
 use std::sync::Arc;
+use tracing::info;
 
 #[derive(Serialize)]
 struct HealthCheckResponse {

@@ -6,9 +6,9 @@ use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use dotenv::dotenv;
 use sqlx::postgres::PgPoolOptions;
-use tracing::info;
 use std::env;
 use std::sync::Arc;
+use tracing::info;
 
 use crate::city::city_controller;
 use crate::health::health_controller;
@@ -22,7 +22,8 @@ async fn main() -> std::io::Result<()> {
 
     let addr = env::var("CITY_API_ADDR").unwrap_or("127.0.0.1".to_string());
     let port = env::var("CITY_API_PORT").unwrap_or("2022".to_string());
-    let db_password = env::var("CITY_API_DB_PASSWORD").expect("CITY_API_DB_PASSWORD must be set in .env file");
+    let db_password =
+        env::var("CITY_API_DB_PASSWORD").expect("CITY_API_DB_PASSWORD must be set in .env file");
     let db_url = env::var("CITY_API_DB_URL").expect("CITY_API_DB_URL must be set in .env file");
     let db_user = env::var("CITY_API_DB_USER").expect("CITY_API_DB_USER must be set in .env file");
 

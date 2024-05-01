@@ -1,8 +1,8 @@
 use crate::city::city_service::CityService;
 use crate::city::model::CreateCity;
 use actix_web::{get, post, web, HttpResponse, Responder};
-use tracing::{error, info};
 use std::sync::Arc;
+use tracing::{error, info};
 
 #[get("/cities")]
 pub async fn get_all_cities(city_service: web::Data<Arc<CityService>>) -> impl Responder {
