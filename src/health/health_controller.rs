@@ -1,6 +1,7 @@
 use crate::health::health_service::HealthService;
 use actix_web::{get, web, HttpResponse, Responder};
 use serde::Serialize;
+use tracing::info;
 use std::sync::Arc;
 
 #[derive(Serialize)]
@@ -44,11 +45,13 @@ struct DatabaseMeta {
 
 #[get("/health/live")]
 async fn live() -> impl Responder {
+    info!("I'm alive!");
     HttpResponse::Ok().body("I'm alive!")
 }
 
 #[get("/health/readiness")]
 async fn ready(health_service: web::Data<Arc<HealthService>>) -> impl Responder {
+    info!("I'm alive and ready!");
     let db_health = match health_service.check().await {
         Ok(_) => Health {
             healthy: true,

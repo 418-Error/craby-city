@@ -2,7 +2,7 @@ postgresql:
   postgresqlDatabase: crabycity
   postgresqlUsername: postgres
 
-cityApiAddr: "localhost"
+cityApiAddr: "0.0.0.0"
 cityApiPort: "80"
 cityApiDbUrl: "postgres://postgres:postgres@localhost:5432/craby_city"
 

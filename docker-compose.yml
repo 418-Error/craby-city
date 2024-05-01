@@ -12,5 +12,26 @@ services:
       - 5432:5432
     volumes:
       - craby_vol:/var/lib/postgresql/data
+    networks:
+      - craby_net
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - 2023:2023
+    environment:
+      CITY_API_DB_ADDR: 0.0.0.0
+      CITY_API_PORT: 2023
+      CITY_API_DB_USER: postgres
+      CITY_API_DB_PASSWORD: postgres
+      CITY_API_DB_URL: postgres:5432
+    networks:
+      - craby_net
 volumes:
   craby_vol:
+
+networks:
+  craby_net:
+    driver: bridge

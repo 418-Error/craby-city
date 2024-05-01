@@ -20,7 +20,7 @@ async fn main() -> std::io::Result<()> {
 
     tracing_subscriber::fmt::init();
 
-    let addr = env::var("CITY_API_DB_ADDR").unwrap_or("127.0.0.1".to_string());
+    let addr = env::var("CITY_API_ADDR").unwrap_or("127.0.0.1".to_string());
     let port = env::var("CITY_API_PORT").unwrap_or("2022".to_string());
     let db_password = env::var("CITY_API_DB_PASSWORD").expect("CITY_API_DB_PASSWORD must be set in .env file");
     let db_url = env::var("CITY_API_DB_URL").expect("CITY_API_DB_URL must be set in .env file");
