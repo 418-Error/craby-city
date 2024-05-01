@@ -34,10 +34,17 @@ jobs:
         needs: [fmt, clippy]
         name: Push Docker image to Dockerhub
         runs-on: ubuntu-latest
-        env:
-            TAG: ${{ github.ref_name }}
         steps:
             - uses: actions/checkout@v4
+            - name: Set output
+              id: vars
+              run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+            - name: Check output of tag
+              env:
+                RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
+              run: |
+                echo $RELEASE_VERSION
+                echo ${{ steps.vars.outputs.tag }}
             - name: Login to Dockerhub
               uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
               with:
@@ -50,12 +57,12 @@ jobs:
                 file: ./Dockerfile
                 push: true
                 tags: |
-                    ${{ secrets.DOCKER_USERNAME }}/craby-city:${{ env.TAG }}
+                    ${{ secrets.DOCKER_USERNAME }}/craby-city:${{ steps.vars.outputs.tag }}
                     ${{ secrets.DOCKER_USERNAME }}/craby-city:latest
             - name: Scan cve
               uses: aquasecurity/trivy-action@master
               with:
-                  image-ref: ${{ secrets.DOCKER_USERNAME }}/craby-city:${{ env.TAG }}
+                  image-ref: ${{ secrets.DOCKER_USERNAME }}/craby-city:${{ steps.vars.outputs.tag }}
                   format: table
                   exit-code: 1
                   ignore-unfixed: true
