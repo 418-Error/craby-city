@@ -1,11 +1,11 @@
 name: push
 
 on:
+    release:
+        types: [published, created]
     push:
-        tags:
-        - v*
-        branches: 
-        - main
+        branches:
+            - main
 
 jobs:
     fmt:
