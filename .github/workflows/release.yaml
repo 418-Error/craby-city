@@ -2,10 +2,10 @@ name: push
 
 on:
     push:
-        branches:
-        - main
         tags:
         - v*
+        branches: 
+        - main
 
 jobs:
     fmt:
@@ -44,6 +44,7 @@ jobs:
                 RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
               run: |
                 echo $RELEASE_VERSION
+                echo $GITHUB_REF
                 echo ${{ steps.vars.outputs.tag }}
             - name: Login to Dockerhub
               uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
