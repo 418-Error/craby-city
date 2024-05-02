@@ -22,7 +22,7 @@ services:
     ports:
       - 2023:2023
     environment:
-      CITY_API_DB_ADDR: 0.0.0.0
+      CITY_API_ADDR: 0.0.0.0
       CITY_API_PORT: 2023
       CITY_API_DB_USER: postgres
       CITY_API_DB_PASSWORD: postgres

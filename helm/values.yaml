@@ -11,7 +11,6 @@ cityApiDbUrl: "crabbycrab-postgresql:5432"
 
 image:
   repository: "milou666/craby-city"
-  tag: "latest"
 
 replicaCount: 1
 
