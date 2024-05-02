@@ -27,7 +27,7 @@ spec:
           - name: CITY_API_PORT
             value: {{ .Values.cityApiPort | quote }} 
           - name: CITY_API_DB_URL
-            value: {{ .Release.name}}-postgresql:5432
+            value: {{ .Release.Name}}-postgresql:5432
           - name: CITY_API_DB_USER
             value: {{ .Values.postgresUser }}
           - name: CITY_API_DB_PASSWORD
