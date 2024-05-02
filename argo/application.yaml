@@ -4,7 +4,7 @@ metadata:
   name: crabby-city
   namespace: argocd
 spec:
-  project: crabby-city
+  project: crabby-city-project
   source:
     repoURL: 'https://github.com/418-Error/craby_city'
     path: helm
@@ -15,7 +15,7 @@ spec:
         - tag.yaml
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: crabbycity
+    namespace: crabbycrab
   syncPolicy:
     automated:
       prune: true
