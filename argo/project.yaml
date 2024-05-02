@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: crabby-city-project
+  namespace: argocd
+spec:
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  description: Project containing all applications for crabby-city
+  destinations:
+  - namespace: '*'
+    server: '*'
+  namespaceResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  orphanedResources:
+    warn: true
+  sourceRepos:
+    - https://github.com/418-Error/craby_city
+    - https://charts.external-secrets.io
+    - https://charts.jetstack.io
+    - https://charts.bitnami.com/bitnami
