@@ -1,25 +1,17 @@
 ARG RUST_VERSION=1.77
-FROM rust:${RUST_VERSION}-buster AS dependency
+FROM rust:${RUST_VERSION}-buster AS build
 WORKDIR /opt/craby_city
 
-COPY . .
-
-RUN --mount=type=bind,source=Cargo.toml,target=Cargo.toml  \
-    --mount=type=bind,source=Cargo.lock,target=Cargo.lock  \
-    cargo build --locked --release
-
-FROM dependency AS build
+COPY Cargo.toml .
+COPY Cargo.lock .
 
 COPY src src
 RUN --mount=type=cache,target=/opt/target/ \
-    --mount=type=bind,source=Cargo.toml,target=Cargo.toml  \
-    --mount=type=bind,source=Cargo.lock,target=Cargo.lock  \
     --mount=type=cache,target=/usr/local/cargo/registry/ \
     cargo build --release && \
     cp ./target/release/craby-city /bin/server
 
 FROM debian:bullseye-slim AS final
-# FROM debian:bullseye AS final
 
 ENV CITY_API_ADDR=$CITY_API_ADDR
 ENV CITY_API_PORT=$CITY_API_PORT
@@ -36,15 +28,13 @@ RUN adduser \
     --no-create-home \
     --uid "1000" \
     appuser
-
 USER appuser
 
 # Copy the executable from the "build" stage.
-COPY --from=build /bin/server /bin
+COPY --from=dependency /bin/server /bin/
 
 # Expose the port that the application listens on.
 EXPOSE 8080
 
 # What the container should run when it is started.
-CMD ["/bin/server"]
-# ENTRYPOINT [ "/bin/bash" ]
+ENTRYPOINT ["/bin/server"]
