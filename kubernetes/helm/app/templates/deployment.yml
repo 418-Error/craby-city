@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-api
+  namespace: {{ .Release.Namespace }}
+  labels:
+      app: api
+spec:
+  replicas: {{ default 1 .Values.replicaCount | int }}
+  selector:
+      matchLabels:
+        app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: {{ .Release.Name }}-api
+        image: "{{ .Values.image.repository }}:{{ default .Values.version .Values.image.tag  }}"
+        ports:
+          - containerPort: {{ .Values.service.internalPort | int }}
+        env:
+          - name: CITY_API_ADDR
+            value: {{ .Values.cityApiAddr }}
+          - name: CITY_API_DB_USER
+            value: "postgres"
+          - name: CITY_API_PORT
+            value: {{ .Values.cityApiPort | quote }}
+          - name: CITY_API_DB_URL
+            value: "{{ .Release.Name }}-postgresql:5432"
+          - name: CITY_API_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-postgresql
+                key: postgres-password

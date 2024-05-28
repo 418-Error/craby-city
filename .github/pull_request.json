@@ -1,0 +1,13 @@
+{
+  "pull_request": {
+    "title": "Test de CI",
+    "body": "Ceci est le corps de ma pull request\n- version: 1.0.0-rc1",
+    "number": 1,
+    "merged": true,
+    "labels": [
+      {
+        "name": "staging"
+      }
+    ]
+  }
+}

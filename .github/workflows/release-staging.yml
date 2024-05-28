@@ -1,0 +1,89 @@
+name: CI/CD Pipeline Staging
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+
+jobs:
+#  fmt:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#      - name: Setup Rust
+#        uses: actions-rust-lang/setup-rust-toolchain@v1.8.0
+#        with:
+#          toolchain: nightly
+#          components: rustfmt
+#      - name: Run rustfmt
+#        run: cargo fmt --all -- --check
+#  clippy:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#      - name: Setup Rust
+#        uses: actions-rust-lang/setup-rust-toolchain@v1.8.0
+#        with:
+#          toolchain: nightly
+#          components: clippy
+#      - name: Run clippy
+#        run: cargo clippy --all -- -D warnings
+  check-pr:
+#    needs:
+#      - fmt
+#      - clippy
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    outputs:
+      pr-title: ${{ steps.pr-title.outputs.title }}
+      version: ${{ steps.extract_version.outputs.result }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Extract PR title
+        id: pr-title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "PullRequest Title: $PR_TITLE"
+          echo "title=$PR_TITLE" >> $GITHUB_OUTPUT
+      - name: Extract version from PullRequest body
+        id: extract_version
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const body = context.payload.pull_request.body
+            const versionMatch = body.match(/- version:\s*(.*)/)
+            if (!versionMatch) {
+              throw new Error('Version not found in PR body')
+            }
+            
+            return versionMatch[1].trim().replace(/"/g, '')
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+      - name: Echo Version
+        run: |
+          echo "Version: ${{ steps.extract_version.outputs.result }}"
+          echo "version=${{ steps.extract_version.outputs.result }}" >> $GITHUB_OUTPUT
+  tag-repository:
+    if: github.event.pull_request.merged == true
+    needs: check-pr
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: 418-Error/craby_city
+          ref: main
+          token: ${{ secrets.PAT }}
+      - name: Tag repository
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "staging-${{ needs.check-pr.outputs.version }}" -m "Staging release"
+          git push origin "staging-${{ needs.check-pr.outputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}

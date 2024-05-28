@@ -1,0 +1,6 @@
+postgresql:
+  architecture: replication
+  auth:
+    postgresUser: postgres
+    postgresPassword: postgres
+    database: "craby_city"
