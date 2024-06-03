@@ -1,5 +1,6 @@
 mod city;
 mod health;
+mod tests;
 
 use crate::city::city_service::CityService;
 use actix_web::web::Data;

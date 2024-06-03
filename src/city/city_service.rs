@@ -13,7 +13,7 @@ impl CityService {
     }
 
     pub async fn find_all(&self) -> Result<Vec<City>, sqlx::Error> {
-        let cities = sqlx::query_as::<_, City>("SELECT * FROM public.cities;")
+        let cities = sqlx::query_as::<_, City>("SELECT * FROM cities;")
             .fetch_all(self.pool.as_ref())
             .await?;
 
@@ -21,7 +21,7 @@ impl CityService {
     }
 
     pub async fn create(&self, city: CreateCity) -> Result<(), sqlx::Error> {
-        sqlx::query("INSERT INTO public.cities (department_code, insee_code, zip_code, name, lat, lon) VALUES ($1, $2, $3, $4, $5, $6)")
+        sqlx::query("INSERT INTO cities (department_code, insee_code, zip_code, name, lat, lon) VALUES ($1, $2, $3, $4, $5, $6)")
             .bind(city.department_code)
             .bind(city.insee_code)
             .bind(city.zip_code)

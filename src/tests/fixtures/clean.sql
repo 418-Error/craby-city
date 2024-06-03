@@ -1,0 +1,1 @@
+DELETE FROM cities WHERE name = 'Bourg-en-Bresse' and insee_code = '01001' and zip_code = '01000' and department_code = '01';
