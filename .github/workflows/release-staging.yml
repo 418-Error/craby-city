@@ -68,6 +68,32 @@ jobs:
         run: |
           echo "Version: ${{ steps.extract_version.outputs.result }}"
           echo "version=${{ steps.extract_version.outputs.result }}" >> $GITHUB_OUTPUT
+  update-helmfile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install yq
+        run: |
+          VERSION="v4.6.3" # Remplacez par la version souhaitée
+          wget https://github.com/mikefarah/yq/releases/download/${VERSION}/yq_linux_amd64 -O /usr/local/bin/yq
+          chmod +x /usr/local/bin/yq
+      - name: Update helmfile staging
+        run: |
+          VERSION="${{ needs.check-pr.outputs.version }}"
+          yq -ie "
+              .releases[] |= (.set[] |= (select(.name == \"version\") | .value = \"$VERSION\")) 
+              | .releases[] |= .version=\"$VERSION\"
+          " kubernetes/helmfiles/staging/helmfile.yml
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add ./kubernetes/helmfiles/staging/helmfile.yml
+          git commit -m "Update version to $VERSION"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   tag-repository:
     if: github.event.pull_request.merged == true
     needs: check-pr
