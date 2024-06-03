@@ -5,8 +5,10 @@ mod tests;
 use crate::city::city_service::CityService;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
+use actix_web_prometheus::PrometheusMetricsBuilder;
 use dotenv::dotenv;
 use sqlx::postgres::PgPoolOptions;
+use std::collections::HashMap;
 use std::env;
 use std::sync::Arc;
 use tracing::info;
@@ -21,7 +23,7 @@ async fn main() -> std::io::Result<()> {
 
     tracing_subscriber::fmt::init();
 
-    let addr = env::var("CITY_API_ADDR").unwrap_or("127.0.0.1".to_string());
+    let addr = env::var("CITY_API_ADDR").unwrap_or("0.0.0.0".to_string());
     let port = env::var("CITY_API_PORT").unwrap_or("2022".to_string());
     let db_password =
         env::var("CITY_API_DB_PASSWORD").expect("CITY_API_DB_PASSWORD must be set in .env file");
@@ -48,8 +50,17 @@ async fn main() -> std::io::Result<()> {
     let city_service = Arc::new(CityService::new(pool.clone()));
     let health_service = Arc::new(HealthService::new(pool.clone()));
 
+    let mut labels = HashMap::new();
+    labels.insert("label1".to_string(), "value1".to_string());
+    let prometheus = PrometheusMetricsBuilder::new("api")
+        .endpoint("/metrics")
+        .const_labels(labels)
+        .build()
+        .unwrap();
+
     HttpServer::new(move || {
         App::new()
+            .wrap(prometheus.clone())
             .app_data(Data::new(city_service.clone()))
             .app_data(Data::new(health_service.clone()))
             .service(city_controller::get_all_cities)

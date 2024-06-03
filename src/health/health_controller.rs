@@ -49,6 +49,18 @@ async fn live() -> impl Responder {
     HttpResponse::Ok().body("I'm alive!")
 }
 
+#[get("/health")]
+async fn health() -> impl Responder {
+    info!("I'm alive!");
+    HttpResponse::Ok().body("I'm alive!")
+}
+
+#[get("/up")]
+async fn up() -> impl Responder {
+    info!("I'm alive!");
+    HttpResponse::Ok().body("I'm alive!")
+}
+
 #[get("/health/readiness")]
 async fn ready(health_service: web::Data<Arc<HealthService>>) -> impl Responder {
     info!("I'm alive and ready!");
