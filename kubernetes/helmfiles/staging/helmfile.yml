@@ -5,9 +5,9 @@ releases:
   - name: app
     namespace: craby-city
     chart: ../../helm/app
-    version: '1.0.4-rc2'
+    version: '1.0.4-rc3'
     values:
       - values.yml
     set:
       - name: version
-        value: '1.0.4-rc2'
+        value: '1.0.4-rc3'
