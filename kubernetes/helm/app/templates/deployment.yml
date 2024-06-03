@@ -32,5 +32,7 @@ spec:
           - name: CITY_API_DB_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: {{ .Release.Name }}-postgresql
+                name: infrastructure-postgresql
                 key: postgres-password
+      imagePullSecrets:
+        - name: ghcr-secret
