@@ -1,12 +1,20 @@
 ARG RUST_VERSION=1.77
-FROM rust:${RUST_VERSION}-buster AS build
+FROM rust:${RUST_VERSION}-buster AS dependency
 WORKDIR /opt/craby_city
+
+RUN mkdir -p src && echo "fn main() {}" >> src/main.rs
 
 COPY Cargo.toml .
 COPY Cargo.lock .
 
+RUN cargo fetch
+
+FROM dependency AS build
+
 COPY src src
 RUN --mount=type=cache,target=/opt/target/ \
+    --mount=type=bind,source=Cargo.toml,target=Cargo.toml  \
+    --mount=type=bind,source=Cargo.lock,target=Cargo.lock  \
     --mount=type=cache,target=/usr/local/cargo/registry/ \
     cargo build --release && \
     cp ./target/release/craby-city /bin/server
