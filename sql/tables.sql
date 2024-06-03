@@ -11,3 +11,6 @@ CREATE TABLE cities (
     lat FLOAT(10),
     lon FLOAT(10)
 );
+
+SELECT pg_get_serial_sequence('cities', 'id');
+SELECT setval('cities_id_seq', (SELECT MAX(id) FROM cities), false);
