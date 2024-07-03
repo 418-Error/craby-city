@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/dockerconfigjson
+metadata:
+  name: registry-credentials
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-99"
+data:
+  .dockerconfigjson: {{ toJson .Values.registry | b64enc }}

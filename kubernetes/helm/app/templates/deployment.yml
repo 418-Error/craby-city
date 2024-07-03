@@ -28,7 +28,7 @@ spec:
           - name: CITY_API_PORT
             value: {{ .Values.cityApiPort | quote }}
           - name: CITY_API_DB_URL
-            value: "{{ .Release.Name }}-postgresql:5432"
+            value: "infrastructure-postgresql-primary"
           - name: CITY_API_DB_PASSWORD
             valueFrom:
               secretKeyRef:
