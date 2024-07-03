@@ -1,0 +1,65 @@
+name: Production Release (tag)
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+staging.[0-9]+'
+  workflow_call:
+    secrets:
+      CONTAINER_REGISTRY_TOKEN:
+        required: true
+      CONTAINER_REGISTRY_USERNAME:
+        required: true
+      CONTAINER_REGISTRY_ENDPOINT:
+        required: true
+      PAT:
+        required: true
+
+
+
+# Verify the tag if with release version
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.CONTAINER_REGISTRY_USERNAME }}
+          password: ${{ secrets.CONTAINER_REGISTRY_TOKEN }}
+          registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
+      - name: Tag without v
+        id: staging_tag
+        run: |
+          TAG=$(echo ${GITHUB_REF#refs/tags/} | sed 's/^v//')
+          echo "##[set-output name=tag;]$TAG"
+          echo $TAG
+      - name: Extract tag name
+        id: extract_tag
+        run: |
+          TAG=$(echo ${GITHUB_REF#refs/tags/} | sed 's/^v//;s/-staging./-rc./')
+          echo "##[set-output name=tag;]$TAG"
+          echo $TAG
+      - name: Pull staging image
+        run: |
+          echo ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/418-error/craby_city:${{ steps.staging_tag.outputs.tag }}
+          docker pull ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/418-error/craby_city:${{ steps.staging_tag.outputs.tag }}
+      - name: Tag image
+        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/418-error/craby_city:${{ steps.staging_tag.outputs.tag }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/418-error/craby_city:${{ steps.extract_tag.outputs.tag }}
+      - name: Push image
+        run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/418-error/craby_city:${{ steps.extract_tag.outputs.tag }}
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+        with:
+          ref: ${{ steps.staging_tag.outputs.tag }}
+          tag_name: ${{ steps.extract_tag.outputs.tag }}
+          release_name: Release ${{ steps.extract_tag.outputs.tag }}
+          draft: false
+          prerelease: false
