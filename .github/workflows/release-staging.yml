@@ -98,7 +98,7 @@ jobs:
           git tag -a ${{ inputs.release-version }} -m "Tagging ${{ inputs.release-version }}"
           git push origin ${{ inputs.release-version }}
   build-and-push:
-    uses: 418-error/craby-city/.github/workflows/docker-build-push.yml@main
+    uses: 418-error/craby-city/.github/workflows/build-and-push.yml@main
     needs: [update-helmfile, tag-release, fmt, clippy]
     with:
       image-name: 418-error/craby_city
