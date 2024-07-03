@@ -1,76 +1,65 @@
-name: CI/CD Pipeline Staging
+name: Staging Release (tag)
 
 on:
-  pull_request:
-    types:
-      - closed
-    branches:
-      - main
+  workflow_call:
+    inputs:
+      release-version:
+        description: 'Release version'
+        required: true
+        type: string
+    secrets:
+      PAT:
+        description: 'Personal Access Token'
+        required: true
+      CONTAINER_REGISTRY_USERNAME:
+        description: 'Container Registry Username'
+        required: true
+      CONTAINER_REGISTRY_TOKEN:
+        description: 'Container Registry Password'
+        required: true
+      CONTAINER_REGISTRY_ENDPOINT:
+        description: 'Container Registry Endpoint'
+        required: true
+      
+  workflow_dispatch:
+    inputs:
+      release-version:
+        description: 'Release version'
+        required: true
+        type: string
+
+
+# Update Chart
+# Build and Push
+# Create Release
+# Sync Infrastructure
 
 jobs:
-#  fmt:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v4
-#      - name: Setup Rust
-#        uses: actions-rust-lang/setup-rust-toolchain@v1.8.0
-#        with:
-#          toolchain: nightly
-#          components: rustfmt
-#      - name: Run rustfmt
-#        run: cargo fmt --all -- --check
-#  clippy:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v4
-#      - name: Setup Rust
-#        uses: actions-rust-lang/setup-rust-toolchain@v1.8.0
-#        with:
-#          toolchain: nightly
-#          components: clippy
-#      - name: Run clippy
-#        run: cargo clippy --all -- -D warnings
-  check-pr:
-#    needs:
-#      - fmt
-#      - clippy
-    if: github.event.pull_request.merged == true
+  fmt:
     runs-on: ubuntu-latest
-    outputs:
-      pr-title: ${{ steps.pr-title.outputs.title }}
-      version: ${{ steps.extract_version.outputs.result }}
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Extract PR title
-        id: pr-title
-        env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          echo "PullRequest Title: $PR_TITLE"
-          echo "title=$PR_TITLE" >> $GITHUB_OUTPUT
-      - name: Extract version from PullRequest body
-        id: extract_version
-        uses: actions/github-script@v6
+      - uses: actions/checkout@v4
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1.8.0
         with:
-          script: |
-            const body = context.payload.pull_request.body
-            const versionMatch = body.match(/- version:\s*(.*)/)
-            if (!versionMatch) {
-              throw new Error('Version not found in PR body')
-            }
-            
-            return versionMatch[1].trim().replace(/"/g, '')
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
-      - name: Echo Version
-        run: |
-          echo "Version: ${{ steps.extract_version.outputs.result }}"
-          echo "version=${{ steps.extract_version.outputs.result }}" >> $GITHUB_OUTPUT
+          toolchain: nightly
+          components: rustfmt
+      - name: Run rustfmt
+        run: cargo fmt --all -- --check
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1.8.0
+        with:
+          toolchain: nightly
+          components: clippy
+      - name: Run clippy
+        run: cargo clippy --all -- -D warnings
   update-helmfile:
     runs-on: ubuntu-latest
-    needs: [check-pr]
+    needs: [fmt, clippy]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -78,77 +67,170 @@ jobs:
           repository: 418-error/craby_city
           ref: main
           token: ${{ secrets.PAT }}
-      - name: Install yq
-        run: |
-          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq &&\
-          sudo chmod +x /usr/bin/yq
-      - name: Echo version yq
-        run: |
-          yq --version
       - name: Update helmfile staging
         run: |
-          VERSION="${{ needs.check-pr.outputs.version }}"
+          VERSION="${{ inputs.release-version }}"
           echo "Version de staging qui sera déployé sur le helmfile: $VERSION"
-          yq -ie "
-              .releases[] |= (.set[] |= (select(.name == \"version\") | .value = \"$VERSION\")) 
-              | .releases[] |= .version=\"$VERSION\"
-          " ./kubernetes/helmfiles/staging/helmfile.yml
-      - name: Commit and push changes
-        run: |
-          VERSION="${{ needs.check-pr.outputs.version }}"
-          git config --global user.name 'github-actions'
-          git config --global user.email 'github-actions@github.com'
-          git add ./kubernetes/helmfiles/staging/helmfile.yml
-          git commit -m "Update version to $VERSION"
-          git push 
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  tag-repository:
-    if: github.event.pull_request.merged == true
-    needs: [check-pr, update-helmfile]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          repository: 418-Error/craby_city
-          ref: main
-          token: ${{ secrets.PAT }}
-      - name: Tag repository
+          yq -ie ".image.tag=\"$VERSION\"" ./kubernetes/helmfiles/staging/values.yml
+      - name: Commit changes
         run: |
           git config user.name "GitHub Actions"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "staging-${{ needs.check-pr.outputs.version }}" -m "Staging release"
-          git push origin "staging-${{ needs.check-pr.outputs.version }}"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add kubernetes/helmfiles/staging/values.yml
+          git commit -m "Update staging values.yml to ${{ inputs.release-version }}"
+          git push
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
-  build-and-push:
-    if: github.event.pull_request.merged == true
-    needs: [tag-repository, check-pr]
+  tag-release:
     runs-on: ubuntu-latest
+    needs: [update-helmfile, fmt, clippy]
     steps:
-      - name: Set version
-        id: set-version
-        run: echo "VERSION=${{ needs.check-pr.outputs.version }}" >> $GITHUB_ENV
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: 418-Error/craby_city
+          repository: 418-error/craby_city
           ref: main
           token: ${{ secrets.PAT }}
-      - name: Login to Container Registry
-        uses: docker/login-action@v3
+      - name: Tag Branches
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a ${{ inputs.release-version }} -m "Tagging ${{ inputs.release-version }}"
+          git push origin ${{ inputs.release-version }}
+  build-and-push:
+    uses: 418-error/craby_city/.github/workflows/docker-build-push.yml@main
+    needs: [update-helmfile, tag-release, fmt, clippy]
+    with:
+      image-name: 418-error/craby_city
+      dockerfile: Dockerfile
+      build-args: ""
+      tag: ${{ inputs.release-version }}
+      repository: "418-error/craby_city"
+    secrets: inherit
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
         with:
-          registry: ghcr.io
-          username: ${{ secrets.CONTAINER_REGISTRY_USERNAME }}
-          password: ${{ secrets.PAT }} 
-      - name: Setup Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build and Push
-        uses: docker/build-push-action@v5
-        with:
-          push: true
-          context: .
-          tags: ghcr.io/418-error/craby-city:${{ env.VERSION }}
+          ref: ${{ inputs.release-version }}
+          tag_name: ${{ inputs.release-version }}
+          release_name: Release ${{ inputs.release-version }}
+          draft: false
+          prerelease: true
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #     - name: Extract PR title
+  #       id: pr-title
+  #       env:
+  #         PR_TITLE: ${{ github.event.pull_request.title }}
+  #       run: |
+  #         echo "PullRequest Title: $PR_TITLE"
+  #         echo "title=$PR_TITLE" >> $GITHUB_OUTPUT
+  #     - name: Extract version from PullRequest body
+  #       id: extract_version
+  #       uses: actions/github-script@v6
+  #       with:
+  #         script: |
+  #           const body = context.payload.pull_request.body
+  #           const versionMatch = body.match(/- version:\s*(.*)/)
+  #           if (!versionMatch) {
+  #             throw new Error('Version not found in PR body')
+  #           }
+            
+  #           return versionMatch[1].trim().replace(/"/g, '')
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.PAT }}
+  #     - name: Echo Version
+  #       run: |
+  #         echo "Version: ${{ steps.extract_version.outputs.result }}"
+  #         echo "version=${{ steps.extract_version.outputs.result }}" >> $GITHUB_OUTPUT
+  # update-helmfile:
+  #   runs-on: ubuntu-latest
+  #   needs: [check-pr]
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #       with:
+  #         repository: 418-error/craby_city
+  #         ref: main
+  #         token: ${{ secrets.PAT }}
+  #     - name: Install yq
+  #       run: |
+  #         sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq &&\
+  #         sudo chmod +x /usr/bin/yq
+  #     - name: Echo version yq
+  #       run: |
+  #         yq --version
+  #     - name: Update helmfile staging
+  #       run: |
+  #         VERSION="${{ needs.check-pr.outputs.version }}"
+  #         echo "Version de staging qui sera déployé sur le helmfile: $VERSION"
+  #         yq -ie "
+  #             .releases[] |= (.set[] |= (select(.name == \"version\") | .value = \"$VERSION\")) 
+  #             | .releases[] |= .version=\"$VERSION\"
+  #         " ./kubernetes/helmfiles/staging/helmfile.yml
+  #     - name: Commit and push changes
+  #       run: |
+  #         VERSION="${{ needs.check-pr.outputs.version }}"
+  #         git config --global user.name 'github-actions'
+  #         git config --global user.email 'github-actions@github.com'
+  #         git add ./kubernetes/helmfiles/staging/helmfile.yml
+  #         git commit -m "Update version to $VERSION"
+  #         git push 
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # tag-repository:
+  #   if: github.event.pull_request.merged == true
+  #   needs: [check-pr, update-helmfile]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #       with:
+  #         repository: 418-Error/craby_city
+  #         ref: main
+  #         token: ${{ secrets.PAT }}
+  #     - name: Tag repository
+  #       run: |
+  #         git config user.name "GitHub Actions"
+  #         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+  #         git tag -a "staging-${{ needs.check-pr.outputs.version }}" -m "Staging release"
+  #         git push origin "staging-${{ needs.check-pr.outputs.version }}"
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.PAT }}
+  # build-and-push:
+  #   if: github.event.pull_request.merged == true
+  #   needs: [tag-repository, check-pr]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Set version
+  #       id: set-version
+  #       run: echo "VERSION=${{ needs.check-pr.outputs.version }}" >> $GITHUB_ENV
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #       with:
+  #         repository: 418-Error/craby_city
+  #         ref: main
+  #         token: ${{ secrets.PAT }}
+  #     - name: Login to Container Registry
+  #       uses: docker/login-action@v3
+  #       with:
+  #         registry: ghcr.io
+  #         username: ${{ secrets.CONTAINER_REGISTRY_USERNAME }}
+  #         password: ${{ secrets.PAT }} 
+  #     - name: Setup Buildx
+  #       uses: docker/setup-buildx-action@v3
+  #     - name: Build and Push
+  #       uses: docker/build-push-action@v5
+  #       with:
+  #         push: true
+  #         context: .
+  #         tags: ghcr.io/418-error/craby-city:${{ env.VERSION }}
 
 
