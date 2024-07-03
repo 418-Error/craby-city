@@ -1,10 +1,9 @@
 cityApiAddr: "0.0.0.0"
 cityApiPort: 3333
 port: 3333
-
 image:
   repository: "ghcr.io/418-error/craby-city"
-  tag: "0"
+  tag: "1.0.0-rc1"
 service:
   internalPort: 80
   externalPort: 80
